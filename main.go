@@ -3,12 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math"
 	"os"
-	"strconv"
-	"strings"
 )
 
 var filename = "./measurements.txt"
+
+// var filename = "./create/measurements.txt"
 
 type Station struct {
 	min, max, sum float64
@@ -26,6 +27,35 @@ func newStation(val float64) *Station {
 
 var stations = map[string]*Station{}
 
+func parseFloat(measure []byte) float64 {
+	var dotPos int
+	for i, b := range measure {
+		if b == '.' {
+			dotPos = i
+			break
+		}
+	}
+
+	mf := 0.0
+	i := 0
+	neg := false
+	if measure[0] == '-' {
+		neg = true
+		i++
+	}
+
+	for d := dotPos - i - 1; d >= 0; d-- {
+		mf += float64(measure[i]-'0') * math.Pow10(d)
+		i++
+	}
+	mf += float64(measure[dotPos+1]-'0') * math.Pow10(-1)
+	if neg {
+		mf = -mf
+	}
+
+	return mf
+}
+
 func main() {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -34,9 +64,18 @@ func main() {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		city, measure, _ := strings.Cut(scanner.Text(), ";")
+		line := scanner.Bytes()
+		var sepPos int
+		for i, b := range line {
+			if b == ';' {
+				sepPos = i
+				break
+			}
+		}
+		city := string(line[:sepPos])
+		measure := line[sepPos+1:]
 
-		mf, _ := strconv.ParseFloat(measure, 64)
+		mf := parseFloat(measure)
 		if s, ok := stations[city]; ok {
 			if mf > s.max {
 				s.max = mf
