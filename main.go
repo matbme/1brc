@@ -7,6 +7,8 @@ import (
 	"os"
 )
 
+const maxCityName = 64
+
 var filename = "./measurements.txt"
 
 // var filename = "./create/measurements.txt"
@@ -25,7 +27,7 @@ func newStation(val float64) *Station {
 	}
 }
 
-var stations = map[string]*Station{}
+var stations = map[[maxCityName]byte]*Station{}
 
 func parseFloat(measure []byte) float64 {
 	var dotPos int
@@ -48,7 +50,7 @@ func parseFloat(measure []byte) float64 {
 		mf += float64(measure[i]-'0') * math.Pow10(d)
 		i++
 	}
-	mf += float64(measure[dotPos+1]-'0') * math.Pow10(-1)
+	mf += float64(measure[dotPos+1]-'0') * 0.1
 	if neg {
 		mf = -mf
 	}
@@ -72,7 +74,8 @@ func main() {
 				break
 			}
 		}
-		city := string(line[:sepPos])
+		city := [maxCityName]byte{}
+		copy(city[:], line[:sepPos])
 		measure := line[sepPos+1:]
 
 		mf := parseFloat(measure)
