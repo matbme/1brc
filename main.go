@@ -14,11 +14,11 @@ var filename = "./measurements.txt"
 // var filename = "./create/measurements.txt"
 
 type Station struct {
-	min, max, sum float64
+	min, max, sum int
 	n             int
 }
 
-func newStation(val float64) *Station {
+func newStation(val int) *Station {
 	return &Station{
 		min: val,
 		max: val,
@@ -58,6 +58,28 @@ func parseFloat(measure []byte) float64 {
 	return mf
 }
 
+func parseIntMult10(measure []byte) int {
+	val := int(measure[len(measure)-1] - '0')
+
+	negative := false
+	lim := 0
+	if measure[0] == '-' {
+		negative = true
+		lim = 1
+	}
+
+	mult := 10
+	for ni := len(measure) - 3; ni >= lim; ni-- {
+		val += int(measure[ni]-'0') * mult
+		mult *= 10
+	}
+
+	if negative {
+		return -val
+	}
+	return val
+}
+
 func main() {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -78,7 +100,7 @@ func main() {
 		copy(city[:], line[:sepPos])
 		measure := line[sepPos+1:]
 
-		mf := parseFloat(measure)
+		mf := parseIntMult10(measure)
 		if s, ok := stations[city]; ok {
 			if mf > s.max {
 				s.max = mf
@@ -94,6 +116,6 @@ func main() {
 	}
 
 	for city, s := range stations {
-		fmt.Printf("%s;%.1f;%.1f;%.1f\n", city, s.min, s.sum/float64(s.n), s.max)
+		fmt.Printf("%s;%.1f;%.1f;%.1f\n", city, float64(s.min)/10.0, (float64(s.sum)/10.0)/float64(s.n), float64(s.max)/10.0)
 	}
 }
